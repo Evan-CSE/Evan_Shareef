@@ -1,0 +1,42 @@
+body{
+    font-family: 'Yomogi', cursive;
+}
+
+h1{
+    font-size: 50px;
+}
+
+.evan{
+    color: orange;
+}
+
+h3{
+    font-weight: bold;
+}
+
+section{
+    display: block;
+    width: 100%;
+}
+
+.upper_left{
+    display: inline-block;
+    width: 40%;
+    height: 100px;
+}
+
+.upper_left img{
+    display: inline-block;
+    width: 140%;
+    height: auto;
+}
+
+
+.link a{
+    display: inline-block;
+    text-decoration: none;
+    padding:10px;
+    border: 2px solid orange;
+    background-image: linear-gradient(orange,tomato);
+    border-radius: 20px;
+}
