@@ -17,19 +17,23 @@ h3{
 section{
     display: block;
     width: 100%;
+    background-image: url('images/top-banner.png');
+    background-repeat: no-repeat;
 }
 
 .upper_left{
+    top:0px;
     display: inline-block;
-    width: 40%;
+    width: 45%;
     height: 100px;
 }
 
 .upper_left img{
     display: inline-block;
-    width: 140%;
+    width: 100%;
     height: auto;
 }
+
 
 
 .link a{
