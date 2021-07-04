@@ -1,46 +1,40 @@
 body{
-    font-family: 'Yomogi', cursive;
+    margin: 0;
 }
+
 
 h1{
-    font-size: 50px;
+    font-family: 'Pacifico', cursive;
 }
 
-.evan{
-    color: orange;
+.orange-color{
+    color:orange;
 }
 
-h3{
-    font-weight: bold;
-}
 
 section{
-    display: block;
-    width: 100%;
-    background-image: url('images/top-banner.png');
-    background-repeat: no-repeat;
+    display: flex;
 }
 
 .upper_left{
-    top:0px;
-    display: inline-block;
-    width: 45%;
-    height: 100px;
+    width:50%;
+    padding-left:5%;
 }
 
 .upper_left img{
-    display: inline-block;
     width: 100%;
-    height: auto;
 }
 
-
-
-.link a{
-    display: inline-block;
+.link_button{
     text-decoration: none;
-    padding:10px;
-    border: 2px solid orange;
     background-image: linear-gradient(orange,tomato);
-    border-radius: 20px;
+    padding:10px 40px;
+    border-radius: 5px;
+    color: white;
+    font-weight: 700;
+}
+
+.top_banner{
+    background-image: url('images/top-banner.png');
+    background-repeat: no-repeat;
 }
