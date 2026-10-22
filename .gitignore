@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.playwright-mcp/
+*.local
+.DS_Store
+Thumbs.db
+inspiration-current.png

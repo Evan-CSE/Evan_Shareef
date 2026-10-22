@@ -1,0 +1,23 @@
+{
+  "name": "Hasibur Rahman — AI Systems Engineer",
+  "short_name": "Hasibur",
+  "description": "AI Systems Engineer building production LLM, RAG, speech, and Go backend systems.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FBFAF7",
+  "theme_color": "#FBFAF7",
+  "icons": [
+    {
+      "src": "favicon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

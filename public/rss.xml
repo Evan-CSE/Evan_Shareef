@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Writing — Hasibur Rahman</title>
+    <link>https://evan-cse.github.io/Evan_Shareef/writing</link>
+    <description>Essays on AI systems, data modeling, Bangla NLP, ASR, backend engineering, and production.</description>
+    <language>en</language>
+    <lastBuildDate>Thu, 22 Oct 2026 18:27:34 GMT</lastBuildDate>
+    <atom:link href="https://evan-cse.github.io/Evan_Shareef/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>RAG is not a new engineering discipline</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/rag-is-not-a-new-engineering-discipline</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/rag-is-not-a-new-engineering-discipline</guid>
+      <description>A vector database is a tool, not a strategy. What backend engineers already know about data modeling is the actual job.</description>
+      <category>AI Systems</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>The invisible characters breaking your Bangla NLP pipeline</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/invisible-characters-bangla-nlp</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/invisible-characters-bangla-nlp</guid>
+      <description>NFC, ZWJ, ZWNJ, and byte-level BPE: how visually identical Bangla words become different token sequences, and what that does to WER and retrieval.</description>
+      <category>Data</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>13 days of call audio in 1 day</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/13-days-of-call-audio-in-1-day</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/13-days-of-call-audio-in-1-day</guid>
+      <description>What production Bangla ASR actually takes: low-bitrate telephony, curated data, a custom tokenizer, and evals that catch what WER misses.</description>
+      <category>AI Systems</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>The RabbitMQ bug that was hiding in a Go channel</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/rabbitmq-bug-go-channel</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/rabbitmq-bug-go-channel</guid>
+      <description>Messages looked lost. They were sitting in process memory. A production debugging story about acknowledgement, buffering, and observability.</description>
+      <category>Engineering</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Build the knowledge graph, not the tech stack</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/build-the-knowledge-graph</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/build-the-knowledge-graph</guid>
+      <description>Frameworks are implementations of ideas. A practical way to connect concurrency, memory, and systems knowledge instead of collecting tools.</description>
+      <category>Career</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>From rows to vectors: the more data changes, the more it stays the same</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/from-rows-to-vectors</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/from-rows-to-vectors</guid>
+      <description>Vector search did not replace data modeling. It added another access pattern, and the old questions still decide whether retrieval works.</description>
+      <category>Data</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>What 1,200 LeetCode problems don&apos;t teach you</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/what-1200-leetcode-problems-dont-teach</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/what-1200-leetcode-problems-dont-teach</guid>
+      <description>Interviews test whether your thinking is legible. What 1,200 solved problems teach, and what they quietly leave out.</description>
+      <category>Career</category>
+      <pubDate>Thu, 22 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>What is feature engineering, really?</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/what-is-feature-engineering</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/what-is-feature-engineering</guid>
+      <description>A feature is a bet about what matters. The job is not adding columns; it is encoding a hypothesis the model can test.</description>
+      <category>Foundations</category>
+    </item>
+    <item>
+      <title>Why does the sigmoid function actually work?</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/why-sigmoid-works</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/why-sigmoid-works</guid>
+      <description>The sigmoid function is not decoration. It turns a score into a probability and gives gradient descent a reason to keep moving.</description>
+      <category>Foundations</category>
+    </item>
+    <item>
+      <title>What is gradient descent, actually?</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/what-is-gradient-descent</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/what-is-gradient-descent</guid>
+      <description>Gradient descent is a loop with a budget. Here is what the update rule is actually doing, and where it breaks.</description>
+      <category>Foundations</category>
+    </item>
+    <item>
+      <title>Is CNN some out-of-the-box magic?</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/is-cnn-magic</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/is-cnn-magic</guid>
+      <description>A convolution is a small, repeated bet about locality. That is why CNNs work, and why they are not magic.</description>
+      <category>Foundations</category>
+    </item>
+    <item>
+      <title>Can you actually feel what a Transformer does?</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/can-you-feel-transformer</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/can-you-feel-transformer</guid>
+      <description>Attention is a lookup with weights. A mental model for what a transformer actually does, without the mystique.</description>
+      <category>Foundations</category>
+    </item>
+  </channel>
+</rss>
