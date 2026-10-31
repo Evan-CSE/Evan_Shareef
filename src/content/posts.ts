@@ -894,7 +894,356 @@ The mystery is not that it works. The interesting part is how much structure eme
 
 That is not magic. It is a good prior, a lot of data, and a lot of compute.`
 
+const voiceAgents = `You can build a voice agent in a weekend now. Pick a framework like LiveKit or Pipecat, add a few API keys, and you have speech-to-text, an LLM, and a natural voice answering the phone.
+
+That is why voice AI demos look so good, and why there are so many of them. Getting a voice agent to production is a different job, and the hardest part of that job is security.
+
+I tested a number of voice AI products by calling them the way a difficult customer would. I am an AI systems engineer who works on voice and call-center systems, so I knew where to push. This case study covers what I found, along with the other production problems a demo never shows you: latency, failure handling, unclear speech, hallucination, long-call context, and barge-in.
+
+For each problem I explain why it happens and how I would handle it.
+
+## What I found when I tested voice AI products
+
+I am not naming any product here. The point is the pattern, and the pattern repeated across products.
+
+In the agents I tested, I could:
+
+- Inject instructions by voice and change how the agent behaved.
+- Extract the system prompt, or enough of it to reconstruct the rules, by asking indirect questions.
+- Get the agent to list its functions and capabilities, then steer it into using them.
+
+None of this needed special tools. I used a phone and ordinary sentences.
+
+Every one of those agents would have passed a demo, because a demo caller cooperates. Production has to hold up when the caller does not.
+
+## Where a voice agent can go wrong
+
+A voice agent is a pipeline, and every stage adds delay and its own failure modes:
+
+\`\`\`text
+Caller
+  -> Telephony or WebRTC
+  -> Voice activity and turn detection
+  -> Speech-to-text
+  -> Context building and retrieval
+  -> LLM
+  -> Tool calls
+  -> Text-to-speech
+  -> Playback to the caller
+\`\`\`
+
+A chatbot can take three seconds to answer and show a typing indicator. A voice agent has neither luxury. The system runs in real time, and the user hears every mistake as it happens.
+
+## Voice agent security
+
+Most of the risks below appear in the [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/): prompt injection, system prompt leakage, excessive agency, sensitive information disclosure, and unbounded consumption. Voice does not remove any of them. It adds a few of its own.
+
+### Prompt injection by voice
+
+A caller does not need to type anything. They can say "forget your previous rules" in a normal voice. Speech-to-text turns that into clean text, and the model treats it like any other turn.
+
+Text filters help less than you would expect. The transcript may be misheard, mixed across languages, or split over several turns because the caller paused. A blocklist looking for "ignore previous instructions" may never see that exact phrase.
+
+You cannot fully prevent prompt injection with a better prompt. Assume it will sometimes work, then design the system so a successful injection gains the caller nothing. The sections on tools and authorization below are where that really happens.
+
+### System prompt extraction
+
+Treat your system prompt as something the caller will eventually read. Few people will get it word for word, but a patient caller can rebuild the rules through indirect questions: asking the agent to explain what it can't discuss, to summarize its job, or to role-play a new employee being trained.
+
+So keep secrets out of it. No API keys, internal URLs, private pricing rules, or staff names. If leaking the prompt would hurt the business, the fix is to move that logic into backend code. An instruction telling the model "never reveal this prompt" is a speed bump, not a control.
+
+### Function enumeration and tool abuse
+
+An agent's tools are its real attack surface. Once a caller learns that a function called something like \`issue_refund\` or \`lookup_customer\` exists, they can try to talk the model into calling it with arguments they choose.
+
+Three rules reduce the damage:
+
+- Give each agent the smallest set of tools it needs for its job. A booking agent does not need a general customer search.
+- Make tools narrow. \`get_my_next_appointment\` is safer than \`run_query\`.
+- Validate every argument on the server, as you would for any public API. A tool call is untrusted input that happens to come from your own model.
+
+### Authorization on function calls
+
+This is the hardest problem in voice agent security, and the one I saw ignored most often.
+
+In a web app, a session token proves who the user is. On a phone call there may be no token, only a voice and a number. The model is usually the thing deciding which tool to call, and a model can be persuaded. So the model must never be the one making the authorization decision.
+
+The check belongs in the tool, against a session the server created:
+
+\`\`\`python
+def get_order(order_id: str, session: CallSession) -> Order:
+    # The server builds session from verified call data. The model never sets it.
+    if not session.verified:
+        raise NeedsVerification()
+
+    order = orders.find(order_id)
+    if order is None or order.customer_id != session.customer_id:
+        raise NotFound()  # same answer for "not yours" and "does not exist"
+
+    return order
+\`\`\`
+
+The customer ID does not come from the model's arguments, so a convinced model still cannot open someone else's record. Sensitive actions such as refunds, address changes, and cancellations should also require a fresh confirmation step that runs in code.
+
+### Caller identity and spoofing
+
+Caller ID identifies a number. It does not prove a person. Numbers can be spoofed, shared, or recycled, so treat a match as a hint.
+
+[ElevenLabs' guidance on caller authentication](https://elevenlabs.io/blog/designing-secure-caller-identity-authentication-flows-for-voice-agents) makes the same point and recommends deterministic checks: a one-time code by SMS or email, or knowledge-based answers validated by a server-side tool. The agent then acts on the tool's result, not on its own reading of the conversation.
+
+Be careful with voice biometrics too. Cloned voices are cheap now, so a voice match should never be the only factor.
+
+### Indirect injection from your own data
+
+The caller is not the only source of untrusted text. A voice agent also reads retrieved documents, CRM notes, emails, and tool results. Anything a customer can write into those systems can reach the model later.
+
+The easy one to miss is the transcript. Many teams send call transcripts to another LLM for summaries, QA scores, or CRM updates. A sentence spoken at minute two can steer a report generated hours later, in a system nobody thought of as public.
+
+Treat retrieved content and transcripts as data. Mark them clearly in the prompt, and give post-call pipelines no write access they do not need.
+
+### Personal data in recordings and logs
+
+Voice systems collect sensitive data by default: recordings, transcripts, and LLM traces. All of them can contain names, card numbers, and medical details.
+
+Redact sensitive fields before they reach logs and third-party providers. Decide how long you keep recordings, restrict who can replay them, and check the consent and recording rules for each region you operate in. Collect card numbers through a compliant payment flow instead of letting them pass through your transcript.
+
+### Unbounded cost
+
+Every minute of a call costs money across telephony, speech-to-text, the LLM, and text-to-speech. Someone can keep your agent talking on purpose, or an automated caller can open many calls at once.
+
+Set a maximum call length, limit concurrent calls per number, and cap tool calls per turn. Alert on unusual spend.
+
+## Voice AI latency
+
+Most guidance puts the target at roughly 500 to 800 milliseconds between the caller finishing and the agent starting to speak. Those numbers come mostly from vendors, so treat them as a rule of thumb. The direction is not in doubt, though: [delay in a voice conversation feels like a problem much sooner](https://picovoice.ai/guide/voice-agents/voice-ux-latency-turn-taking/) than it does in text.
+
+The trouble is that the delay is spread across the whole pipeline. Here is an example budget. The numbers are illustrative, so measure your own:
+
+| Stage | Example budget |
+| --- | --- |
+| Deciding the caller has finished | 150 to 300 ms |
+| Final transcript | 50 to 150 ms |
+| Retrieval or tool call | 0 to 200 ms |
+| LLM first token | 150 to 300 ms |
+| Text-to-speech first audio | 50 to 150 ms |
+| Network and telephony | 50 to 150 ms |
+
+Add those up and the budget is already gone on a bad turn. Measure P95 per stage, because the average hides exactly the calls people complain about.
+
+### How to keep RAG from slowing the call
+
+RAG search costs time, and a voice agent has little to spare. Some ways to tackle it:
+
+- Decide whether a turn needs retrieval at all. "Yes, please" does not.
+- Start retrieval on a partial transcript, so results are often ready when the turn ends. Discard them if the final transcript changes the question.
+- Answer common questions from a cache of approved responses.
+- Run the embedding model and vector store in the same region as the agent.
+- Retrieve less. Sending fewer, better chunks also cuts LLM time.
+- Set a hard timeout. If retrieval misses it, the agent should say what it can or be honest that it needs a moment.
+
+I have written more on why retrieval is a data modeling problem in [RAG is not a new engineering discipline](https://evan-cse.github.io/Evan_Shareef/writing/rag-is-not-a-new-engineering-discipline).
+
+### Streaming and filler speech
+
+Stream everything. Send LLM tokens to text-to-speech as complete phrases rather than waiting for a full response.
+
+When a tool will take a while, have the agent say something honest first, such as "Let me check that booking." A short natural phrase is far better than silence, and silence on a phone call makes people ask "hello?", which then interrupts your pipeline. Avoid an identical filler phrase on every turn, because callers notice quickly.
+
+You will also trade accuracy against speed. Waiting longer to decide that the caller finished reduces the chance of cutting them off, but adds delay to every turn. Tune this per use case, and use a semantic turn detector if silence timing alone is not good enough.
+
+## When the pipeline fails mid-call
+
+A web app can show an error page. A voice agent has only dead air. Things will fail in the middle of a live call, so decide what happens at each stage before they do.
+
+| What fails | What the caller should get |
+| --- | --- |
+| Speech-to-text | Fail over to a second provider, or ask the caller to repeat |
+| LLM timeout or error | Retry once, then use a backup model or a short scripted line |
+| Text-to-speech | Fall back to another voice, even if it sounds different |
+| Tool or backend | An honest message and another route, such as a callback |
+| Everything | Transfer to a human, or end the call politely and follow up |
+
+Some rules matter across all of these:
+
+- **Set a timeout on every stage.** A stage that hangs is worse than one that fails.
+- **Make tools idempotent.** If a booking call times out and retries, the caller should not get two bookings. Use an idempotency key per action.
+- **Never let the agent claim success without a result.** If the tool failed, the agent must not say "you're all set".
+- **Keep call state outside the worker.** If a process dies, a replacement should be able to pick up the call or at least know what happened.
+- **Make human handoff a first-class path.** Pass a summary along, so the caller does not have to start over.
+
+If a human transfer is possible, also plan for hours when nobody is available. The [common failure modes guide from Picovoice](https://picovoice.ai/guide/voice-agents/common-failure-modes/) is a useful reference for separating timing failures from state failures.
+
+## Voice UX: what if the caller is not clear?
+
+Real calls happen in cars, markets, and busy offices, on cheap phones and bad networks. Your test recordings do not sound like that.
+
+### Handling unclear speech
+
+Never let the agent guess at something important. A misheard date or amount can do real damage while sounding perfectly confident.
+
+- Use speech-to-text confidence, and ask again when it is low.
+- Confirm critical details by reading them back: "That's Tuesday the 4th at 3 PM, correct?"
+- After two failed attempts, change the method. Offer keypad input, send an SMS link, or transfer the call.
+- Do not repeat "Sorry, I didn't catch that" forever.
+- Give the speech-to-text model hints for names, products, and domain terms.
+- Test on real telephone audio. Models perform differently at telephone quality than on clean recordings.
+
+This gets harder with languages like Bangla, where callers mix in English and spoken forms vary. I wrote about what that looks like in [the invisible characters breaking your Bangla NLP pipeline](https://evan-cse.github.io/Evan_Shareef/writing/invisible-characters-bangla-nlp).
+
+### Writing for the ear
+
+LLMs write for the screen. A response with bullets, markdown, or a long URL sounds terrible when read aloud.
+
+Keep responses to a sentence or two and ask one question at a time. Normalize numbers, dates, and currency before text-to-speech, because "1/2" can be read as a fraction or a date. Test how your voice pronounces local names.
+
+Handle silence as well. If the caller goes quiet, prompt them once or twice and then close the call gracefully.
+
+## How to detect and prevent hallucinations in voice agents
+
+A hallucination is worse in voice. The caller has nothing on screen to double-check, the answer sounds confident, and it may be heard as a promise from your company.
+
+Prevent as much as you can before generation:
+
+- Pull prices, policies, availability, and account details from tools. Do not let the model answer those from memory.
+- Tell the agent to say it doesn't know, and treat that as a correct outcome.
+- If retrieval finds nothing relevant, skip the model's guess and use a set response or a handoff.
+- Limit what the agent is allowed to discuss.
+
+Detection is harder because streaming audio leaves little time. A few things work:
+
+- Check high-risk claims before speaking. Numbers, dates, and commitments can be matched against the tool results for that turn, in the time between sentences.
+- Hold a sentence back when it contains a value that didn't appear in the tool output.
+- Run a slower groundedness evaluation after the call, on every transcript, and review the failures.
+
+Post-call checks will not save that call, but they will show you what to fix. Track hallucination rate as a production metric.
+
+## Managing context in long voice conversations
+
+Every turn adds to the context, which means more tokens, more cost, and a slower first token. Long calls also suffer when an early fact falls out of the window and the agent asks the caller to repeat themselves.
+
+A plain summary alone is not enough. Summaries lose exact values, and an account number or a date can't be approximate. I would keep three separate things:
+
+- **Structured state.** Verified identity, the caller's goal, and collected details such as dates and order IDs. Your code owns this, not the model.
+- **Recent turns.** The last several turns, kept word for word.
+- **A rolling summary.** Older conversation compressed into a short note.
+
+Update the summary in the background so it never adds delay to a turn. Run it with a cheap, fast model, and rebuild the context from those three parts each turn.
+
+Summaries carry their own risk. An injected instruction that gets summarized can come back looking like trusted memory. So write summaries as reported speech ("the caller asked to..."), and never let one change verified state.
+
+Also trim large tool results before they enter the context. A full CRM record dumped into every turn is the most common waste I would look for first.
+
+## Barge-in: what happens when the caller interrupts
+
+Barge-in means the caller talks over the agent. Humans do it constantly, so a production voice agent must handle it.
+
+Most people think of it as stopping the audio, but that is only half of it. There are two jobs: react quickly, then make the conversation history match what the caller actually heard.
+
+### Why generated text must not stay in context
+
+The LLM writes faster than the voice speaks. When the caller interrupts, the system may have generated three sentences while the caller heard one.
+
+If those unheard sentences stay in the context, the model believes it said things the caller never heard. Suppose it had generated "Your refund is approved, and it takes five days," but the caller interrupted after "Your refund." Later, the model may refer to details the caller never got.
+
+So when an interruption fires:
+
+\`\`\`python
+async def on_barge_in(turn: AssistantTurn):
+    turn.llm_stream.cancel()
+    turn.tts_stream.cancel()
+    playback.flush()
+
+    heard = turn.text_spoken_until(playback.position_ms())
+    context.replace_assistant_message(turn.id, heard, interrupted=True)
+\`\`\`
+
+Good frameworks do much of this for you. [Pipecat commits only the text spoken before the interruption](https://docs.pipecat.ai/pipecat/fundamentals/interruptions) as the assistant's message. LiveKit also estimates what was played, and a [reported bug around false interruptions](https://github.com/livekit/agents/issues/5038) shows how subtle this gets. Audio-native models have the same issue: [developers reported transcripts not lining up with playback](https://community.openai.com/t/realtime-api-interruptions-dont-properly-trim-the-transcript/1000703) on OpenAI's Realtime API. Even with a framework, test this behavior yourself.
+
+### The details that break barge-in
+
+- **Knowing what was heard is an estimate.** Audio sent to a telephony provider is buffered before it is played. Use word timestamps from text-to-speech where you can, and expect to be off by a word or two.
+- **Not every sound is an interruption.** Coughs, background voices, and "uh-huh" should not stop the agent. Require real words or a minimum duration, and use the transcript to confirm.
+- **The agent can hear itself.** Without good echo cancellation, its own voice triggers a barge-in.
+- **Tools can't be un-called.** If the caller interrupts after a booking started, the audio can stop but the booking may still go through. The agent must know that, and must not act as if nothing happened.
+- **Stale work must die.** Each turn needs an ID, so late results from a cancelled turn are ignored.
+
+## More production problems to plan for
+
+A few more issues that deserve attention before launch:
+
+- **Multilingual calls.** Callers switch languages mid-sentence, so speech-to-text, the LLM, and the voice all need to keep up.
+- **Voicemail and call screening.** Outbound agents need to detect them, or they will hold a conversation with an answering machine.
+- **Keypad input.** DTMF is more reliable than speech for account numbers and PINs.
+- **Concurrency.** Calls are long-lived and stateful, so autoscaling and deployments need to drain workers without dropping calls.
+- **Provider changes.** A model or voice update can change behavior overnight. Pin versions where you can and rerun your tests.
+- **Prompt versioning.** Tie each call to the exact prompt and model that handled it, or you can't debug it later.
+- **Testing.** Unit tests won't cover this. Replay real audio with noise, accents, and interruptions, and run automated simulated callers before each release.
+- **Attack testing.** Speak your injection tests through the full audio pipeline. Pasting them into a text box skips speech-to-text, which is where many of the real differences appear.
+- **Observability.** Log a per-turn trace with stage timings, transcript, tool calls, barge-in events, and audio, so you can replay any bad call.
+- **Measuring success.** Track task completion, transfer rate, and repeat calls alongside uptime. An agent can be available and still useless.
+
+## Production readiness checklist for voice agents
+
+Before calling a voice agent production ready, I would want a yes to each of these:
+
+1. Does a successful prompt injection still leave the caller unable to reach anything they shouldn't?
+2. Is the system prompt free of secrets?
+3. Is authorization enforced in tool code, using a server-created session?
+4. Are callers verified with more than caller ID before sensitive actions?
+5. Are retrieved content and transcripts treated as untrusted?
+6. Is personal data redacted from logs, with a retention policy for recordings?
+7. Are call length, concurrency, and tool loops capped?
+8. Do you know P95 latency for each pipeline stage?
+9. Does every stage have a timeout and a fallback?
+10. Are tools idempotent?
+11. Is there a working human handoff?
+12. Are critical details read back to the caller?
+13. Do prices and policies come from tools rather than model memory?
+14. Are key facts stored as structured state, separate from the summary?
+15. After a barge-in, does the context contain only what the caller heard?
+16. Have you tested with real audio, noise, and interruptions?
+17. Can you replay any call turn by turn?
+
+## Frequently asked questions
+
+### Why do voice AI demos fail in production?
+
+A demo has one cooperative speaker, a quiet room, and a happy path. Production has noise, accents, interruptions, provider failures, and people testing your limits. Those conditions expose latency, reliability, and security gaps a demo never touches.
+
+### Can prompt injection happen through voice?
+
+Yes. Speech-to-text turns spoken instructions into text the LLM reads like any other input. Variations in transcription can also get past text filters, so authorization has to be enforced in backend code.
+
+### What is a good latency for a voice agent?
+
+A common target is 500 to 800 milliseconds from when the caller stops speaking to when the agent starts. Track P95 for each stage, because the slowest calls shape how the product feels.
+
+### What is barge-in in a voice agent?
+
+Barge-in is when a caller interrupts the agent while it is speaking. The system has to stop playback, cancel generation, and remove the unheard text from the conversation context.
+
+### How do you stop a voice agent from hallucinating?
+
+Fetch facts from tools, allow the agent to say it doesn't know, check high-risk values against tool results before speaking, and review transcripts for groundedness after each call.
+
+## The bottom line
+
+Frameworks have made voice agents easy to start, and I'm glad they have. The demo was never the hard part. The hard part is everything that happens when a real person, on a bad line, in a hurry, says something you never planned for, and some of those people will be trying to break it.
+
+If you are building one of these or want to compare notes, [find me on LinkedIn](https://www.linkedin.com/in/evan-shareef/). You can also read how I approached a production system in my [call center analytics case study](https://evan-cse.github.io/Evan_Shareef/work/call-center-analytics).`
+
 export const posts: Post[] = [
+  {
+    slug: 'voice-agents-in-production',
+    title: 'Voice Agents in Production: What Demos Hide',
+    description:
+      'A case study on voice AI security and production problems: prompt injection, tool authorization, latency, barge-in, hallucination, and context.',
+    date: '2026-10-31',
+    category: 'AI Systems',
+    tags: ['Voice AI', 'Security', 'Prompt injection', 'Production'],
+    readingTime: readingTime(voiceAgents),
+    body: voiceAgents,
+  },
   {
     slug: 'rag-is-not-a-new-engineering-discipline',
     title: 'RAG is not a new engineering discipline',

@@ -5,8 +5,16 @@
     <link>https://evan-cse.github.io/Evan_Shareef/writing</link>
     <description>Essays on AI systems, data modeling, Bangla NLP, ASR, backend engineering, and production.</description>
     <language>en</language>
-    <lastBuildDate>Thu, 22 Oct 2026 18:27:34 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 31 Oct 2026 16:53:44 GMT</lastBuildDate>
     <atom:link href="https://evan-cse.github.io/Evan_Shareef/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Voice Agents in Production: What Demos Hide</title>
+      <link>https://evan-cse.github.io/Evan_Shareef/writing/voice-agents-in-production</link>
+      <guid isPermaLink="true">https://evan-cse.github.io/Evan_Shareef/writing/voice-agents-in-production</guid>
+      <description>A case study on voice AI security and production problems: prompt injection, tool authorization, latency, barge-in, hallucination, and context.</description>
+      <category>AI Systems</category>
+      <pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
     <item>
       <title>RAG is not a new engineering discipline</title>
       <link>https://evan-cse.github.io/Evan_Shareef/writing/rag-is-not-a-new-engineering-discipline</link>

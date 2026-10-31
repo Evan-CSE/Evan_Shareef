@@ -8,6 +8,7 @@
     "generate": "tsx scripts/generate-assets.ts && tsx scripts/generate-resumes.ts && tsx scripts/generate-feeds.ts",
     "prebuild": "npm run generate",
     "build": "tsc -b && vite build",
+    "postbuild": "tsx scripts/prerender.ts",
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
